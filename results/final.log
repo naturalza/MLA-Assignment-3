@@ -1,0 +1,277 @@
+=== final: iris h=4 ===
+  SGD      primary=0.9507±0.0269
+  SCG      primary=0.9884±0.0223
+  LeapFrog primary=0.9652±0.0411
+=== final: breast_cancer h=32 ===
+  SGD      primary=0.9748±0.0043
+  SCG      primary=0.9725±0.0087
+  LeapFrog primary=0.9713±0.0065
+=== final: glass h=4 ===
+  SGD      primary=0.6172±0.0711
+  SCG      primary=0.6192±0.0724
+  LeapFrog primary=0.6152±0.0832
+=== final: sinc h=8 ===
+  SGD      primary=-0.0223±0.0453
+  SCG      primary=-0.0012±0.0043
+  LeapFrog primary=-0.0048±0.0076
+=== final: sincos h=24 ===
+  SGD      primary=-0.0211±0.0067
+  SCG      primary=-0.0051±0.0055
+  LeapFrog primary=-0.0135±0.0080
+=== final: friedman1 h=12 ===
+  SGD      primary=-0.0442±0.0448
+  SCG      primary=-0.0141±0.0517
+  LeapFrog primary=-0.0622±0.0992
+--- breast_cancer ---
+{
+  "shapiro": {
+    "SGD": 1.7324497589408417e-09,
+    "SCG": 2.058589949487715e-08,
+    "LeapFrog": 1.5531076629210442e-06
+  },
+  "all_normal": false,
+  "overall_test": "kruskal",
+  "overall_p": 0.07338944067098287,
+  "overall_stat": 5.223950427557745,
+  "pairwise": [
+    {
+      "pair": "SGD vs SCG",
+      "p": 0.43203811291145533,
+      "p_holm": 0.43203811291145533,
+      "significant": false
+    },
+    {
+      "pair": "SGD vs LeapFrog",
+      "p": 0.023542934028152777,
+      "p_holm": 0.07062880208445833,
+      "significant": false
+    },
+    {
+      "pair": "SCG vs LeapFrog",
+      "p": 0.19216456429868223,
+      "p_holm": 0.38432912859736446,
+      "significant": false
+    }
+  ],
+  "means": {
+    "SGD": 0.9748062015503874,
+    "SCG": 0.9724806201550387,
+    "LeapFrog": 0.9713178294573642
+  },
+  "stds": {
+    "SGD": 0.00440754676499359,
+    "SCG": 0.008894075537872735,
+    "LeapFrog": 0.006643563531667002
+  }
+}
+--- friedman1 ---
+{
+  "shapiro": {
+    "SGD": 4.52626316034299e-06,
+    "SCG": 1.3131990287398877e-11,
+    "LeapFrog": 1.9145875340259243e-07
+  },
+  "all_normal": false,
+  "overall_test": "kruskal",
+  "overall_p": 2.462343269667338e-10,
+  "overall_stat": 44.24947496947499,
+  "pairwise": [
+    {
+      "pair": "SGD vs SCG",
+      "p": 7.380285855777029e-10,
+      "p_holm": 2.2140857567331088e-09,
+      "significant": true
+    },
+    {
+      "pair": "SGD vs LeapFrog",
+      "p": 0.0162848089481173,
+      "p_holm": 0.0162848089481173,
+      "significant": true
+    },
+    {
+      "pair": "SCG vs LeapFrog",
+      "p": 2.15403414258883e-06,
+      "p_holm": 4.30806828517766e-06,
+      "significant": true
+    }
+  ],
+  "means": {
+    "SGD": -0.044204505942265736,
+    "SCG": -0.014128902235363876,
+    "LeapFrog": -0.062155672183810226
+  },
+  "stds": {
+    "SGD": 0.04559132592613341,
+    "SCG": 0.052609709206762674,
+    "LeapFrog": 0.10087820180397736
+  }
+}
+--- glass ---
+{
+  "shapiro": {
+    "SGD": 0.49096615564998486,
+    "SCG": 0.08616403589873245,
+    "LeapFrog": 0.23799306821983407
+  },
+  "all_normal": true,
+  "overall_test": "anova",
+  "overall_p": 0.9795985336619117,
+  "overall_stat": 0.020617335150186697,
+  "pairwise": [
+    {
+      "pair": "SGD vs SCG",
+      "p": 0.9149831245397947,
+      "p_holm": 1.0,
+      "significant": false
+    },
+    {
+      "pair": "SGD vs LeapFrog",
+      "p": 0.9211636114503099,
+      "p_holm": 1.0,
+      "significant": false
+    },
+    {
+      "pair": "SCG vs LeapFrog",
+      "p": 0.8443623351806939,
+      "p_holm": 1.0,
+      "significant": false
+    }
+  ],
+  "means": {
+    "SGD": 0.617171717171717,
+    "SCG": 0.6191919191919192,
+    "LeapFrog": 0.6151515151515152
+  },
+  "stds": {
+    "SGD": 0.07227451079132453,
+    "SCG": 0.07366314142306742,
+    "LeapFrog": 0.08465046305903129
+  }
+}
+--- iris ---
+{
+  "shapiro": {
+    "SGD": 2.6714139934398296e-05,
+    "SCG": 2.3717619973143562e-08,
+    "LeapFrog": 1.1850713568753412e-05
+  },
+  "all_normal": false,
+  "overall_test": "kruskal",
+  "overall_p": 3.51368479734883e-05,
+  "overall_stat": 20.512520356664893,
+  "pairwise": [
+    {
+      "pair": "SGD vs SCG",
+      "p": 1.3909622441997822e-06,
+      "p_holm": 4.172886732599347e-06,
+      "significant": true
+    },
+    {
+      "pair": "SGD vs LeapFrog",
+      "p": 0.07241671998493747,
+      "p_holm": 0.07241671998493747,
+      "significant": false
+    },
+    {
+      "pair": "SCG vs LeapFrog",
+      "p": 0.023660309766258887,
+      "p_holm": 0.047320619532517774,
+      "significant": true
+    }
+  ],
+  "means": {
+    "SGD": 0.9507246376811592,
+    "SCG": 0.9884057971014492,
+    "LeapFrog": 0.9652173913043479
+  },
+  "stds": {
+    "SGD": 0.027339574992602485,
+    "SCG": 0.022644802598355992,
+    "LeapFrog": 0.0417965621869933
+  }
+}
+--- sinc ---
+{
+  "shapiro": {
+    "SGD": 5.812703652178988e-09,
+    "SCG": 6.170377665880996e-11,
+    "LeapFrog": 4.126529752009973e-07
+  },
+  "all_normal": false,
+  "overall_test": "kruskal",
+  "overall_p": 1.5126302097430562e-06,
+  "overall_stat": 26.803321123321098,
+  "pairwise": [
+    {
+      "pair": "SGD vs SCG",
+      "p": 5.185675139382169e-07,
+      "p_holm": 1.5557025418146507e-06,
+      "significant": true
+    },
+    {
+      "pair": "SGD vs LeapFrog",
+      "p": 0.02415688464281263,
+      "p_holm": 0.02415688464281263,
+      "significant": true
+    },
+    {
+      "pair": "SCG vs LeapFrog",
+      "p": 0.0019526766739305424,
+      "p_holm": 0.003905353347861085,
+      "significant": true
+    }
+  ],
+  "means": {
+    "SGD": -0.022256338282130587,
+    "SCG": -0.001195030525188138,
+    "LeapFrog": -0.0048139626828094
+  },
+  "stds": {
+    "SGD": 0.046084535608224175,
+    "SCG": 0.004331294457827624,
+    "LeapFrog": 0.0076976139887026075
+  }
+}
+--- sincos ---
+{
+  "shapiro": {
+    "SGD": 1.5182857479583931e-05,
+    "SCG": 1.1221472747317982e-05,
+    "LeapFrog": 0.14817810500441259
+  },
+  "all_normal": false,
+  "overall_test": "kruskal",
+  "overall_p": 4.4782380368864725e-11,
+  "overall_stat": 47.65841269841269,
+  "pairwise": [
+    {
+      "pair": "SGD vs SCG",
+      "p": 1.328851208138703e-10,
+      "p_holm": 3.986553624416109e-10,
+      "significant": true
+    },
+    {
+      "pair": "SGD vs LeapFrog",
+      "p": 0.0006548646168546143,
+      "p_holm": 0.0006548646168546143,
+      "significant": true
+    },
+    {
+      "pair": "SCG vs LeapFrog",
+      "p": 1.6350572081705153e-05,
+      "p_holm": 3.2701144163410306e-05,
+      "significant": true
+    }
+  ],
+  "means": {
+    "SGD": -0.021072645449890057,
+    "SCG": -0.005086206998341161,
+    "LeapFrog": -0.013496319129953045
+  },
+  "stds": {
+    "SGD": 0.006802723543328344,
+    "SCG": 0.005602295478935396,
+    "LeapFrog": 0.008151622990143631
+  }
+}
+Friedman: {'ranks': [[1.0, 2.0, 3.0], [2.0, 1.0, 3.0], [2.0, 1.0, 3.0], [3.0, 1.0, 2.0], [3.0, 1.0, 2.0], [3.0, 1.0, 2.0]], 'average_ranks': [2.3333333333333335, 1.1666666666666667, 2.5], 'statistic': 6.333333333333329, 'p': 0.04214384350927651}

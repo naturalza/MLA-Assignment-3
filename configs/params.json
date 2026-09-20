@@ -1,0 +1,146 @@
+{
+  "iris": {
+    "SGD": {
+      "params": {
+        "learning_rate": 0.1,
+        "momentum": 0.9,
+        "batch_size": 32
+      },
+      "mean_val": 0.0307998075952156
+    },
+    "SCG": {
+      "params": {
+        "sigma": 1e-05,
+        "lambd": 0.0001
+      },
+      "mean_val": 0.022930208343121972
+    },
+    "LeapFrog": {
+      "params": {
+        "dt": 1.0,
+        "delta": 1.0
+      },
+      "mean_val": 0.06972140308557301
+    }
+  },
+  "breast_cancer": {
+    "SGD": {
+      "params": {
+        "learning_rate": 0.1,
+        "momentum": 0.9,
+        "batch_size": 32
+      },
+      "mean_val": 0.00833472901337413
+    },
+    "SCG": {
+      "params": {
+        "sigma": 0.0001,
+        "lambd": 1e-06
+      },
+      "mean_val": 0.001338275039479391
+    },
+    "LeapFrog": {
+      "params": {
+        "dt": 1.0,
+        "delta": 10.0
+      },
+      "mean_val": 0.005530346295771567
+    }
+  },
+  "glass": {
+    "SGD": {
+      "params": {
+        "learning_rate": 0.1,
+        "momentum": 0.9,
+        "batch_size": 16
+      },
+      "mean_val": 0.6921823826754427
+    },
+    "SCG": {
+      "params": {
+        "sigma": 0.0001,
+        "lambd": 1e-06
+      },
+      "mean_val": 0.8458462579433241
+    },
+    "LeapFrog": {
+      "params": {
+        "dt": 1.0,
+        "delta": 10.0
+      },
+      "mean_val": 0.8295114877578574
+    }
+  },
+  "sinc": {
+    "SGD": {
+      "params": {
+        "learning_rate": 0.1,
+        "momentum": 0.9,
+        "batch_size": 32
+      },
+      "mean_val": 0.021984753177152865
+    },
+    "SCG": {
+      "params": {
+        "sigma": 0.0001,
+        "lambd": 0.0001
+      },
+      "mean_val": 0.0039126369684052455
+    },
+    "LeapFrog": {
+      "params": {
+        "dt": 1.0,
+        "delta": 1.0
+      },
+      "mean_val": 0.009708715903088333
+    }
+  },
+  "sincos": {
+    "SGD": {
+      "params": {
+        "learning_rate": 0.01,
+        "momentum": 0.9,
+        "batch_size": 16
+      },
+      "mean_val": 0.04065361202567813
+    },
+    "SCG": {
+      "params": {
+        "sigma": 1e-05,
+        "lambd": 0.0001
+      },
+      "mean_val": 0.016895533648541884
+    },
+    "LeapFrog": {
+      "params": {
+        "dt": 1.0,
+        "delta": 1.0
+      },
+      "mean_val": 0.03517193505330568
+    }
+  },
+  "friedman1": {
+    "SGD": {
+      "params": {
+        "learning_rate": 0.1,
+        "momentum": 0.0,
+        "batch_size": 16
+      },
+      "mean_val": 0.07413828505173056
+    },
+    "SCG": {
+      "params": {
+        "sigma": 1e-05,
+        "lambd": 1e-06
+      },
+      "mean_val": 0.017122705738383107
+    },
+    "LeapFrog": {
+      "params": {
+        "dt": 1.0,
+        "delta": 1.0
+      },
+      "mean_val": 0.014207935905508992
+    }
+  }
+}

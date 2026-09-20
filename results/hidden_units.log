@@ -1,0 +1,47 @@
+=== hidden-unit search: iris [2, 4, 6, 8, 12, 16] ===
+  h=  2  val=0.0900±0.1255  train=0.0527
+  h=  4  val=0.0316±0.0130  train=0.0340
+  h=  6  val=0.0345±0.0145  train=0.0204
+  h=  8  val=0.0372±0.0083  train=0.0234
+  h= 12  val=0.0355±0.0075  train=0.0156
+  h= 16  val=0.0330±0.0057  train=0.0195
+=== hidden-unit search: breast_cancer [4, 8, 12, 16, 24, 32] ===
+  h=  4  val=0.0173±0.0088  train=0.0017
+  h=  8  val=0.0101±0.0114  train=0.0000
+  h= 12  val=0.0088±0.0099  train=0.0000
+  h= 16  val=0.0064±0.0081  train=0.0000
+  h= 24  val=0.0041±0.0058  train=0.0000
+  h= 32  val=0.0024±0.0051  train=0.0000
+=== hidden-unit search: glass [4, 8, 12, 16, 24, 32] ===
+  h=  4  val=0.7921±0.0577  train=0.4507
+  h=  8  val=0.7760±0.0680  train=0.2062
+  h= 12  val=0.8545±0.0674  train=0.1460
+  h= 16  val=0.8363±0.0894  train=0.1355
+  h= 24  val=0.8648±0.0773  train=0.1242
+  h= 32  val=0.8906±0.0384  train=0.1401
+=== hidden-unit search: sinc [2, 4, 6, 8, 12, 16] ===
+  h=  2  val=0.0708±0.0002  train=0.0755
+  h=  4  val=0.0202±0.0175  train=0.0199
+  h=  6  val=0.0053±0.0065  train=0.0044
+  h=  8  val=0.0043±0.0069  train=0.0036
+  h= 12  val=0.0075±0.0091  train=0.0063
+  h= 16  val=0.0055±0.0082  train=0.0046
+=== hidden-unit search: sincos [4, 8, 12, 16, 24] ===
+  h=  4  val=0.0653±0.0055  train=0.0574
+  h=  8  val=0.0220±0.0133  train=0.0191
+  h= 12  val=0.0243±0.0133  train=0.0181
+  h= 16  val=0.0251±0.0124  train=0.0171
+  h= 24  val=0.0184±0.0092  train=0.0114
+=== hidden-unit search: friedman1 [4, 8, 12, 16, 24, 32] ===
+  h=  4  val=0.1794±0.0597  train=0.0975
+  h=  8  val=0.0908±0.0852  train=0.0252
+  h= 12  val=0.0262±0.0500  train=0.0055
+  h= 16  val=0.0559±0.0804  train=0.0075
+  h= 24  val=0.0381±0.0139  train=0.0006
+  h= 32  val=0.0477±0.0142  train=0.0008
+selected hidden units for breast_cancer: 32 (best mean=0.0024)
+selected hidden units for friedman1: 12 (best mean=0.0262)
+selected hidden units for glass: 4 (best mean=0.7760)
+selected hidden units for iris: 4 (best mean=0.0316)
+selected hidden units for sinc: 8 (best mean=0.0043)
+selected hidden units for sincos: 24 (best mean=0.0184)

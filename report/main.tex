@@ -1,0 +1,748 @@
+\documentclass[conference,10pt]{IEEEtran}
+\usepackage{amsmath,amssymb,booktabs,graphicx,algorithm,algpseudocode,multirow,float}
+\usepackage{dblfloatfix}
+\usepackage[section]{placeins}
+\hyphenation{Leap-Frog}
+
+\title{A Comparison of Stochastic Gradient Descent, Scaled Conjugate Gradient and LeapFrog Training of Feedforward Neural Networks}
+\author{
+\IEEEauthorblockN{Logan Shelver}
+\IEEEauthorblockA{Student number: 26946777\\
+RW741 Machine Learning\\
+Department of Computer Science, Stellenbosch University\\
+26946777@sun.ac.za}
+\thanks{The code that produced the results reported here is available at https://github.com/naturalza/MLA-Assignment-3.}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Training a feedforward neural network is an unconstrained minimisation of an error defined on the network weights.
+The study reported here compares stochastic gradient descent, scaled conjugate gradient, and the LeapFrog algorithm LFOP1(b) on three classification problems and three function-approximation problems of increasing complexity.
+A single hidden layer is used.
+The hidden-unit count and the control parameters of each trainer are selected by validation error.
+A total of 30 independent runs and nonparametric statistical tests are used to rank the trainers.
+Scaled conjugate gradient obtained the lowest mean test error on four of the six problems.
+The three trainers were statistically indistinguishable on the Glass Identification problem.
+\end{abstract}
+\begin{IEEEkeywords}
+neural networks, stochastic gradient descent, scaled conjugate gradient, LeapFrog, classification, function approximation
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:intro}
+A feedforward neural network is trained by minimising a scalar error $E(\mathbf{w})$ over a packed weight vector $\mathbf{w}$.
+The minimiser determines both the attained training error and the generalisation of the trained network.
+First-order methods such as stochastic gradient descent (SGD) are simple to implement~\cite{lecun1998,rumelhart1986}.
+The success of SGD depends on the learning rate, the momentum coefficient, and the mini-batch size~\cite{lecun1998,rumelhart1986}.
+Second-order methods and dynamic methods reduce the dependence on the learning rate, the momentum coefficient, and the mini-batch size~\cite{moller1993,snyman1982}.
+
+M{\o}ller introduced scaled conjugate gradient (SCG) as a conjugate-gradient trainer that avoids a line search by Levenberg--Marquardt scaling of a Hessian-vector product~\cite{moller1993}.
+Snyman introduced LeapFrog as a dynamic unconstrained minimiser that treats $E$ as a potential energy~\cite{snyman1982}.
+The leap-frog optimiser (LFOP) variant LFOP1(b) adds an adaptive time step~\cite{snyman1983}.
+Engelbrecht discussed LeapFrog as a neural-network training algorithm~\cite{engelbrecht2007}.
+
+The study reported here compares SGD, SCG, and LeapFrog LFOP1(b) as trainers of a one-hidden-layer feedforward network.
+Three classification problems and three function-approximation problems of increasing complexity are used.
+An empirical search determines the hidden-unit count of each problem.
+A second empirical search determines the control parameters of each trainer.
+A total of 30 independent initialisations and nonparametric tests are used to rank the trainers.
+
+The remainder of the report is organised as follows.
+Section~\ref{sec:background} describes the network model and the three training algorithms.
+Section~\ref{sec:implementation} records the implementation choices.
+Section~\ref{sec:empirical} defines the empirical process.
+Section~\ref{sec:results} reports and discusses the results.
+Section~\ref{sec:conclusions} concludes the report.
+
+\section{Background}
+\label{sec:background}
+The three trainers compared in the study rest on different principles.
+Section~\ref{sec:ffnn} describes the network.
+Section~\ref{sec:sgd} describes stochastic gradient descent.
+Section~\ref{sec:scg} describes scaled conjugate gradient.
+Section~\ref{sec:leap} describes LeapFrog.
+Section~\ref{sec:measures} then defines the performance measures and the statistical tests.
+
+\subsection{Feedforward neural networks}
+\label{sec:ffnn}
+A one-hidden-layer network maps an input $\mathbf{x}\in\mathbb{R}^{n_{i}}$ to an output $\mathbf{y}\in\mathbb{R}^{n_{o}}$.
+The hidden pre-activation and the hidden activation are
+\begin{equation}
+\mathbf{z}^{(1)} = \mathbf{W}^{(1)\top}\mathbf{x}+\mathbf{b}^{(1)}, \qquad
+\mathbf{h} = \tanh(\mathbf{z}^{(1)}),
+\end{equation}
+where $\mathbf{W}^{(1)}\in\mathbb{R}^{n_{i}\times n_{h}}$ and $\mathbf{b}^{(1)}\in\mathbb{R}^{n_{h}}$.
+The output pre-activation is
+\begin{equation}
+\mathbf{z}^{(2)} = \mathbf{W}^{(2)\top}\mathbf{h}+\mathbf{b}^{(2)}.
+\end{equation}
+Classification uses a softmax output.
+Function approximation uses a linear output.
+All weights and biases are packed into a single vector $\mathbf{w}\in\mathbb{R}^{N}$.
+Training is then unconstrained minimisation of $E(\mathbf{w})$.
+Bishop treated the packed-vector view of supervised learning as standard~\cite{bishop1995}.
+
+The error $E$ is assumed continuously differentiable.
+Reverse-mode backpropagation therefore yields $\nabla E(\mathbf{w})$.
+Rumelhart \textit{et al.} derived the backpropagation recurrence~\cite{rumelhart1986}.
+
+\subsection{Stochastic gradient descent}
+\label{sec:sgd}
+SGD replaces $\nabla E(\mathbf{w})$ by a gradient estimated on a mini-batch $B$ of the training set.
+With momentum coefficient $\beta\in[0,1)$ and learning rate $\eta>0$, the update is
+\begin{equation}
+\mathbf{u}\leftarrow \beta\mathbf{u}-\eta\nabla E_{B}(\mathbf{w}), \qquad
+\mathbf{w}\leftarrow\mathbf{w}+\mathbf{u}.
+\end{equation}
+Polyak introduced the momentum term as a heavy-ball correction~\cite{polyak1964}.
+A batch size equal to the training-set size recovers full-batch gradient descent.
+The learning rate, the momentum coefficient, and the batch size are control parameters~\cite{lecun1998}.
+The control parameters are problem dependent.
+
+\subsection{Scaled conjugate gradient}
+\label{sec:scg}
+Conjugate-gradient methods build search directions that are conjugate with respect to the Hessian of a quadratic model of $E$.
+A line search is then required to choose a step length.
+M{\o}ller avoided the line search by combining a conjugate-gradient direction with a Levenberg--Marquardt scalar $\lambda_{k}$ that keeps the model positive definite~\cite{moller1993}.
+
+Let $\mathbf{r}_{k}=-\nabla E(\mathbf{w}_{k})$ and let $\mathbf{p}_{k}$ be the search direction.
+A finite-difference Hessian-vector product
+\begin{equation}
+\mathbf{q}_{k}=\frac{\nabla E(\mathbf{w}_{k}+\sigma_{k}\mathbf{p}_{k})-\nabla E(\mathbf{w}_{k})}{\sigma_{k}},
+\qquad \sigma_{k}=\frac{\sigma}{\lVert\mathbf{p}_{k}\rVert},
+\end{equation}
+is scaled to $\delta_{k}=\mathbf{p}_{k}^{\top}\mathbf{q}_{k}+(\lambda_{k}-\bar{\lambda}_{k})\lVert\mathbf{p}_{k}\rVert^{2}$.
+If $\delta_{k}\le 0$, the scale $\lambda_{k}$ is raised until the model is positive definite.
+The step length is $\alpha_{k}=\mu_{k}/\delta_{k}$ with $\mu_{k}=\mathbf{p}_{k}^{\top}\mathbf{r}_{k}$.
+A comparison parameter $\Delta_{k}$ measures how well the quadratic model predicts the true reduction in $E$.
+A successful step is accepted.
+The scale $\lambda_{k}$ is lowered when $\Delta_{k}\ge 0.75$.
+The scale $\lambda_{k}$ is raised when $\Delta_{k}<0.25$.
+The search direction is then formed with the Polak--Ribi\`ere formula, or the search is restarted along $\mathbf{r}_{k+1}$.
+M{\o}ller presented $\sigma\le 10^{-4}$ and $\lambda_{1}\le 10^{-6}$ as values that are not critical for success~\cite{moller1993}.
+The present study still tunes $\sigma$ and $\lambda_{1}$ on a validation grid.
+
+\subsection{LeapFrog unconstrained minimisation}
+\label{sec:leap}
+Snyman modelled unconstrained minimisation as the motion of a particle of unit mass in the potential $E$~\cite{snyman1982}.
+The acceleration is $\mathbf{a}=-\nabla E(\mathbf{w})$.
+A leap-frog integrator advances the position and the velocity,
+\begin{equation}
+\mathbf{w}_{k+1}=\mathbf{w}_{k}+\mathbf{v}_{k}\Delta t, \qquad
+\mathbf{v}_{k+1}=\mathbf{v}_{k}+\mathbf{a}_{k+1}\Delta t.
+\end{equation}
+The displacement of a step is capped by a maximum length $\delta_{\max}$.
+If the kinetic energy decreases, the particle is placed at the midpoint of the last step.
+The velocity is then reduced, or set to zero after repeated decreases.
+The LFOP1(b) modification grows $\Delta t$ after consecutive successful steps and halves $\Delta t$ after $m$ consecutive obtuse angles between successive accelerations~\cite{snyman1983}.
+Snyman used $\Delta t=0.5$, $m=3$, and compared $\delta_{\max}=1$ with $\delta_{\max}=100$~\cite{snyman1983}.
+The present study tunes $\Delta t$ and $\delta_{\max}$ on a validation grid and keeps $m=3$.
+
+\subsection{Performance measures}
+\label{sec:measures}
+Classification is scored on a locked test set by accuracy, macro-averaged $F_{1}$, and mean categorical cross-entropy.
+Function approximation is scored by mean squared error (MSE), root mean squared error, and the coefficient of determination $R^{2}$.
+Training effort is recorded as the number of gradient evaluations and as wall-clock time.
+The ranking of trainers uses test accuracy on classification problems and test MSE on function-approximation problems.
+
+\subsection{Statistical comparison of stochastic trainers}
+Random initial weights make each run a random variable.
+Shapiro and Wilk tested normality of a sample~\cite{shapiro1965}.
+If every sample of 30 test scores is consistent with normality, a one-way analysis of variance is used.
+Kruskal and Wallis provided a nonparametric alternative when normality did not hold~\cite{kruskal1952}.
+Pairwise differences are tested with the Mann--Whitney procedure~\cite{mann1947}.
+Holm correction controls the family-wise error of the three pairwise tests on each problem~\cite{holm1979}.
+Friedman ranking across problems is used as a further summary~\cite{friedman1937}.
+A significance level of $0.05$ is used throughout.
+
+SGD, SCG, and LeapFrog LFOP1(b) minimise the same differentiable error $E(\mathbf{w})$.
+SGD is a first-order mini-batch method with three control parameters.
+SCG is a scaled conjugate-gradient method with a finite-difference Hessian-vector product.
+LeapFrog is a damped dynamic trajectory method with an adaptive time step.
+
+\section{Implementation}
+\label{sec:implementation}
+The implementation records the architecture, the cost functions, the preprocessing, the three trainers, and the stopping rules.
+Section~\ref{sec:arch} describes the network.
+Section~\ref{sec:cost} describes the cost functions.
+Section~\ref{sec:prep} describes the preprocessing.
+Section~\ref{sec:sgd-impl} through Section~\ref{sec:stop} describe the trainers and the stopping rules.
+
+\subsection{Network architecture and initialisation}
+\label{sec:arch}
+One hidden layer of hyperbolic-tangent units was used on every problem.
+Classification used a softmax output.
+Function approximation used a linear output.
+Glorot and Bengio proposed the uniform Xavier distribution matched to hyperbolic-tangent units~\cite{glorot2010}.
+Weights were drawn from the uniform Xavier distribution.
+Biases were initialised at zero.
+A packed vector $\mathbf{w}$ concatenates $\mathbf{W}^{(1)}$, $\mathbf{b}^{(1)}$, $\mathbf{W}^{(2)}$, and $\mathbf{b}^{(2)}$ in that order.
+
+\subsection{Cost functions}
+\label{sec:cost}
+Classification used mean categorical cross-entropy
+\begin{equation}
+E(\mathbf{w})=-\frac{1}{n}\sum_{i=1}^{n}\sum_{c=1}^{n_{o}} y_{ic}\log(\hat{y}_{ic}+\varepsilon),
+\end{equation}
+with $\varepsilon=10^{-12}$.
+Function approximation used MSE
+\begin{equation}
+E(\mathbf{w})=\frac{1}{n\,n_{o}}\sum_{i=1}^{n}\lVert\hat{\mathbf{y}}_{i}-\mathbf{y}_{i}\rVert^{2}.
+\end{equation}
+The analytic gradient matched $E$.
+The gradient was checked against a central finite difference on exclusive-or.
+The relative error of the finite-difference check was $5.4\times 10^{-11}$.
+
+\subsection{Data preprocessing}
+\label{sec:prep}
+Input features were standardised from the training split only.
+The training mean and the training standard deviation were applied to the validation split and to the test split.
+Classification targets were one-hot encoded.
+A linear output with MSE is sensitive to target scale.
+Regression targets were therefore standardised from the training split.
+Splits were stratified on classification problems.
+A random split was used on function-approximation problems.
+The outer proportions were $70\%$ train, $15\%$ validation, and $15\%$ test, with a fixed seed.
+Every trainer therefore saw the same partitions.
+
+\subsection{Stochastic gradient descent implementation}
+\label{sec:sgd-impl}
+Algorithm~\ref{alg:sgd} states the mini-batch update.
+A full pass over the training set is one epoch.
+The validation error was recorded at the end of each epoch.
+
+\begin{algorithm}[t]
+\caption{Mini-batch stochastic gradient descent}
+\label{alg:sgd}
+\begin{algorithmic}[1]
+\Require packed weights $\mathbf{w}$, learning rate $\eta$, momentum $\beta$, batch size $s$
+\State set the momentum buffer $\mathbf{u}$ to zero
+\For{every epoch}
+  \State shuffle the training set
+  \For{every mini-batch $B$ of size $s$}
+    \State set $\mathbf{u}$ to $\beta\mathbf{u}-\eta\nabla E_{B}(\mathbf{w})$
+    \State set $\mathbf{w}$ to $\mathbf{w}+\mathbf{u}$
+  \EndFor
+  \State record the training error and the validation error
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Scaled conjugate gradient implementation}
+Algorithm~\ref{alg:scg} follows the numbered steps of M{\o}ller~\cite{moller1993}.
+Two implementation safeguards were added.
+A search direction that is not a descent direction was replaced by the steepest-descent vector.
+A failed reduction restarted conjugacy from steepest descent after $\lambda_{k}$ was raised.
+The restart prevented a near-singular conjugate direction from stalling the iteration.
+The two safeguards did not change the scale-update formulae of M{\o}ller.
+
+\begin{algorithm}[t]
+\caption{Scaled conjugate gradient}
+\label{alg:scg}
+\begin{algorithmic}[1]
+\Require packed weights $\mathbf{w}$, interval $\sigma$, scale $\lambda$
+\State set $\mathbf{r}$ to $-\nabla E(\mathbf{w})$, set $\mathbf{p}$ to $\mathbf{r}$, set $\bar{\lambda}$ to $0$, and mark the iteration as successful
+\While{the stopping rule is not met}
+  \If{the previous iteration succeeded}
+    \State estimate $\mathbf{q}$ and set $\delta_{k}$ to $\mathbf{p}^{\top}\mathbf{q}$
+  \EndIf
+  \State set $\delta_{k}$ to $\delta_{k}+(\lambda-\bar{\lambda})\lVert\mathbf{p}\rVert^{2}$
+  \If{$\delta_{k}\le 0$}
+    \State raise $\lambda$ until the quadratic model is positive definite
+  \EndIf
+  \State set $\alpha$ to $(\mathbf{p}^{\top}\mathbf{r})/\delta_{k}$
+  \State compute $\Delta_{k}$ from the true reduction and the quadratic reduction
+  \If{$\Delta_{k}\ge 0$}
+    \State set $\mathbf{w}$ to $\mathbf{w}+\alpha\mathbf{p}$, update $\mathbf{r}$, and accept the step
+    \State restart the direction or apply the Polak--Ribi\`ere formula for $\mathbf{p}$
+  \Else
+    \State reject the step, raise $\lambda$, and set $\mathbf{p}$ to $\mathbf{r}$
+  \EndIf
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{LeapFrog implementation}
+Algorithm~\ref{alg:leap} follows algorithm (23) of Snyman~\cite{snyman1982} with the LFOP1(b) time-step rules~\cite{snyman1983}.
+The time step was clipped to $[10^{-8},10]$ to prevent overflow after many consecutive successful steps.
+
+\begin{algorithm}[t]
+\caption{LeapFrog LFOP1(b)}
+\label{alg:leap}
+\begin{algorithmic}[1]
+\Require packed weights $\mathbf{w}$, time step $\Delta t$, maximum step $\delta_{\max}$, and $m=3$
+\State set $\mathbf{a}$ to $-\nabla E(\mathbf{w})$ and set $\mathbf{v}$ to $\tfrac{1}{2}\mathbf{a}\Delta t$
+\While{the stopping rule is not met}
+  \State cap $\lVert\mathbf{v}\rVert\Delta t$ by $\delta_{\max}$
+  \If{the last $m$ successive accelerations form obtuse angles}
+    \State halve $\Delta t$ and restart from the midpoint with reduced velocity
+  \EndIf
+  \State set $\mathbf{w}$ to $\mathbf{w}+\mathbf{v}\Delta t$, set $\mathbf{a}$ to $-\nabla E(\mathbf{w})$, and set $\mathbf{v}$ to $\mathbf{v}+\mathbf{a}\Delta t$
+  \If{kinetic energy decreased}
+    \State move to the midpoint and reduce or zero the velocity
+  \EndIf
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Stopping criteria}
+\label{sec:stop}
+Every trainer stopped at the first of three events: a validation-error plateau of 60 recorded steps, a gradient norm below $10^{-8}$, or a cap of $20\,000$ gradient evaluations.
+The weights with the lowest validation error were restored.
+The same three events were used for all algorithms.
+A comparison of test error was therefore not confounded by unequal stopping rules.
+
+A shared network and a shared analytic gradient were used by SGD, SCG, and LeapFrog.
+The three algorithms differed only in the update of $\mathbf{w}$.
+Python~3 and NumPy were used.
+No third-party implementation of SCG or LeapFrog was used for the reported numbers.
+
+\section{Empirical Process}
+\label{sec:empirical}
+The empirical process covers the problems, the hidden-unit search, the control-parameter search, and the 30-run comparison.
+Section~\ref{sec:problems} describes the problems.
+Section~\ref{sec:hu} describes the hidden-unit search.
+Section~\ref{sec:cp} describes the control-parameter search.
+Section~\ref{sec:final} describes the final comparison.
+
+\subsection{Problems}
+\label{sec:problems}
+Three classification problems and three function-approximation problems were selected to form a complexity ladder.
+Table~\ref{tab:problems} records the dimensions after the split.
+
+\begin{table}[H]
+\caption{Problem dimensions after the $70/15/15$ split.}
+\label{tab:problems}
+\begin{center}
+\begin{tabular}{lrrrrr}
+\toprule
+Problem & $n_{i}$ & $n_{o}$ & Train & Val. & Test \\
+\midrule
+Iris & 4 & 3 & 104 & 23 & 23 \\
+Breast Cancer & 30 & 2 & 397 & 86 & 86 \\
+Glass & 9 & 6 & 149 & 32 & 33 \\
+sinc & 1 & 1 & 139 & 31 & 30 \\
+sincos & 2 & 1 & 279 & 61 & 60 \\
+Friedman \#1 & 10 & 1 & 279 & 61 & 60 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+The Iris data set has 150 samples, four continuous features, and three flower classes.
+Iris was treated as the easy classification problem.
+The Wisconsin Breast Cancer Diagnostic data set has 569 samples, 30 real-valued features, and two classes.
+Breast Cancer was treated as the medium classification problem.
+The Glass Identification data set has 214 samples, nine chemical features, and six imbalanced classes.
+Glass was treated as the hard classification problem.
+The three classification sets were taken from the University of California, Irvine (UCI) repository.\footnote{https://archive.ics.uci.edu}
+
+A one-dimensional sinc function $f$ was treated as the easy function-approximation problem.
+The function $f$ satisfies $f(x)=\sin(x)/x$ on $[-10,10]$.
+A total of 200 noise-free samples were drawn.
+A two-dimensional function $g$ was treated as the medium function-approximation problem.
+The function $g$ satisfies $g(x,y)=\sin(x)\cos(y)$ on $[-\pi,\pi]^{2}$.
+A total of 400 noise-free samples were drawn.
+Friedman \#1 was treated as the hard function-approximation problem~\cite{friedman1991}.
+The problem has ten inputs.
+Five inputs are informative.
+Five inputs are irrelevant.
+A total of 400 samples were drawn with Gaussian noise of standard deviation $0.1$.
+
+\subsection{Hidden-unit search}
+\label{sec:hu}
+Optimality of the hidden-unit count was defined as follows.
+Ten independent runs were performed at each candidate count.
+The selected count was the smallest count with a mean validation error within five percent of the best mean on the problem.
+The five-percent band preferred a smaller network when the validation error was statistically close to the best value.
+SCG has few control parameters.
+SCG converges in few iterations.
+SCG with $\sigma=10^{-4}$ and $\lambda_{1}=10^{-6}$ was therefore used for the architecture search.
+The grid $\{2,4,6,8,12,16\}$ was used on Iris and sinc.
+The grid $\{4,8,12,16,24\}$ was used on sincos.
+The grid $\{4,8,12,16,24,32\}$ was used on Breast Cancer, Glass, and Friedman \#1.
+The selected count was then frozen for every trainer on that problem.
+
+\subsection{Control-parameter search}
+\label{sec:cp}
+After the architecture was locked, each trainer was tuned on each problem by mean validation error over eight runs.
+The SGD grid was $\eta\in\{0.001,0.01,0.1\}$, $\beta\in\{0.0,0.9\}$, and batch size in $\{16,32,n\}$.
+The SCG grid was $\sigma\in\{10^{-4},10^{-5}\}$ and $\lambda_{1}\in\{10^{-6},10^{-4}\}$.
+The LeapFrog grid was $\Delta t\in\{0.1,0.5,1.0\}$ and $\delta_{\max}\in\{1,10,100\}$.
+The value of $m$ was held at three.
+The winning tuple of each trainer on each problem was locked for the final comparison.
+
+\subsection{Final comparison}
+\label{sec:final}
+A total of 30 independent Xavier initialisations were drawn for each pair of algorithm and problem.
+The splits, the hidden-unit counts, and the control parameters were held fixed.
+Test accuracy was the primary classification score.
+Test MSE was the primary function-approximation score.
+Shapiro--Wilk tests were applied to the 30 primary scores.
+Kruskal--Wallis tests and Holm-corrected Mann--Whitney tests were then applied on each problem.
+A Friedman test ranked the three trainers across the six problems.
+
+The protocol had four locked stages: problem construction, hidden-unit search, control-parameter search, and a 30-run comparison.
+Reported results were produced only from the locked protocol.
+
+\section{Results and Discussion}
+\label{sec:results}
+The results address the hidden-unit search, the selection of the control parameters, and the comparison of the three trainers.
+Section~\ref{sec:res-hu} reports the hidden-unit search.
+Section~\ref{sec:res-cp} reports the tuning.
+Section~\ref{sec:res-clf} and Section~\ref{sec:res-reg} compare the trainers on classification and on function approximation.
+Section~\ref{sec:res-stat} reports the statistical tests.
+
+\subsection{Hidden-unit search}
+\label{sec:res-hu}
+Table~\ref{tab:hidden} records the selected hidden-unit counts.
+
+\begin{table}[H]
+\caption{Selected hidden-unit counts from the validation search.}
+\label{tab:hidden}
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Problem & Hidden units & Val.\ error & Train error \\
+\midrule
+Iris & 4 & 0.0316 & 0.0340 \\
+Breast Cancer & 32 & 0.0024 & 0.0000 \\
+Glass & 4 & 0.7921 & 0.4507 \\
+sinc & 8 & 0.0043 & 0.0036 \\
+sincos & 24 & 0.0184 & 0.0114 \\
+Friedman \#1 & 12 & 0.0262 & 0.0055 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Iris selected four hidden units.
+Figure~\ref{fig:hidden-iris} shows the validation curve.
+The mean validation cross-entropy at four units was $0.0316$.
+Larger nets did not improve on that value by more than five percent.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/hidden_iris.pdf}
+\caption{Hidden-unit search on Iris.}
+\label{fig:hidden-iris}
+\end{figure}
+Breast Cancer selected 32 hidden units.
+Figure~\ref{fig:hidden-breast} shows the validation curve.
+Training cross-entropy reached zero from eight units upward.
+Validation cross-entropy continued to fall.
+The five-percent rule therefore retained the largest grid value.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/hidden_breast_cancer.pdf}
+\caption{Hidden-unit search on Breast Cancer.}
+\label{fig:hidden-breast}
+\end{figure}
+Glass selected four hidden units.
+Figure~\ref{fig:hidden-glass} shows the validation curve.
+The lowest mean validation error on Glass was $0.776$ at eight units.
+A count of four units lay inside the five-percent band and was therefore preferred.
+Training error on Glass kept falling while the hidden layer grew.
+Validation error rose.
+The pattern is the signature of overfitting on a small, imbalanced set.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/hidden_glass.pdf}
+\caption{Hidden-unit search on Glass.}
+\label{fig:hidden-glass}
+\end{figure}
+
+The sinc problem selected eight hidden units.
+The mean validation MSE was $0.0043$.
+Figure~\ref{fig:hidden-sinc} shows the validation curve.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/hidden_sinc.pdf}
+\caption{Hidden-unit search on sinc.}
+\label{fig:hidden-sinc}
+\end{figure}
+The sincos problem selected 24 hidden units.
+Figure~\ref{fig:hidden-sincos} shows the validation curve.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/hidden_sincos.pdf}
+\caption{Hidden-unit search on sincos.}
+\label{fig:hidden-sincos}
+\end{figure}
+Friedman \#1 selected 12 hidden units.
+Figure~\ref{fig:hidden-friedman} shows the validation curve.
+The mean validation MSE at 12 units was $0.0262$.
+Both smaller nets and larger nets were worse.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/hidden_friedman1.pdf}
+\caption{Hidden-unit search on Friedman \#1.}
+\label{fig:hidden-friedman}
+\end{figure}
+
+
+\subsection{Control-parameter search}
+\label{sec:res-cp}
+Table~\ref{tab:params} records the winning control parameters and the mean validation error of each winner.
+
+\begin{table}[H]
+\caption{Locked control parameters and mean validation error.}
+\label{tab:params}
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+Problem and trainer & Locked parameters & Val.\ error \\
+\midrule
+Iris, SGD & $\eta=0.1$, $\beta=0.9$, batch $32$ & 0.031 \\
+Iris, SCG & $\sigma=10^{-5}$, $\lambda_{1}=10^{-4}$ & 0.023 \\
+Iris, LeapFrog & $\Delta t=1.0$, $\delta_{\max}=1$ & 0.070 \\
+Breast Cancer, SGD & $\eta=0.1$, $\beta=0.9$, batch $32$ & 0.008 \\
+Breast Cancer, SCG & $\sigma=10^{-4}$, $\lambda_{1}=10^{-6}$ & 0.001 \\
+Breast Cancer, LeapFrog & $\Delta t=1.0$, $\delta_{\max}=10$ & 0.006 \\
+Glass, SGD & $\eta=0.1$, $\beta=0.9$, batch $16$ & 0.692 \\
+Glass, SCG & $\sigma=10^{-4}$, $\lambda_{1}=10^{-6}$ & 0.846 \\
+Glass, LeapFrog & $\Delta t=1.0$, $\delta_{\max}=10$ & 0.830 \\
+sinc, SGD & $\eta=0.1$, $\beta=0.9$, batch $32$ & 0.022 \\
+sinc, SCG & $\sigma=10^{-4}$, $\lambda_{1}=10^{-4}$ & 0.004 \\
+sinc, LeapFrog & $\Delta t=1.0$, $\delta_{\max}=1$ & 0.010 \\
+sincos, SGD & $\eta=0.01$, $\beta=0.9$, batch $16$ & 0.041 \\
+sincos, SCG & $\sigma=10^{-5}$, $\lambda_{1}=10^{-4}$ & 0.017 \\
+sincos, LeapFrog & $\Delta t=1.0$, $\delta_{\max}=1$ & 0.035 \\
+Friedman \#1, SGD & $\eta=0.1$, $\beta=0.0$, batch $16$ & 0.074 \\
+Friedman \#1, SCG & $\sigma=10^{-5}$, $\lambda_{1}=10^{-6}$ & 0.017 \\
+Friedman \#1, LeapFrog & $\Delta t=1.0$, $\delta_{\max}=1$ & 0.014 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+SGD preferred $\eta=0.1$ and $\beta=0.9$ on four of the six problems.
+Full-batch SGD was never selected.
+SCG preferred values at the defaults of M{\o}ller or at the neighbouring grid point on every problem.
+The observation agrees with the claim that $\sigma$ and $\lambda_{1}$ are not critical~\cite{moller1993}.
+LeapFrog preferred $\Delta t=1.0$ on every problem.
+The maximum step $\delta_{\max}$ was $1$ on Iris, sinc, sincos, and Friedman \#1.
+The maximum step $\delta_{\max}$ was $10$ on Breast Cancer and Glass.
+A value $\delta_{\max}=100$ with $\Delta t=1.0$ produced a mean validation error of $0.67$ on sincos.
+An oversized step is therefore harmful.
+
+On Glass, SGD obtained a mean validation cross-entropy of $0.692$.
+SCG obtained $0.846$ on Glass.
+LeapFrog obtained $0.830$ on Glass.
+The architecture of four hidden units, chosen by SCG, is a small model of a six-class problem.
+The lower validation error of SGD on Glass is consistent with mini-batch regularisation on a small architecture.
+
+
+\subsection{Classification test performance}
+\label{sec:res-clf}
+Figure~\ref{fig:final-clf} and Table~\ref{tab:clf} report mean test accuracy over 30 runs.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/final_classification.pdf}
+\caption{Mean test accuracy on the classification problems.}
+\label{fig:final-clf}
+\end{figure}
+
+\begin{table}[H]
+\caption{Mean test accuracy $\pm$ standard deviation over 30 runs.}
+\label{tab:clf}
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Problem & SGD & SCG & LeapFrog \\
+\midrule
+Iris & $0.951\pm 0.027$ & $0.988\pm 0.022$ & $0.965\pm 0.041$ \\
+Breast Cancer & $0.975\pm 0.004$ & $0.973\pm 0.009$ & $0.971\pm 0.007$ \\
+Glass & $0.617\pm 0.071$ & $0.619\pm 0.072$ & $0.615\pm 0.083$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+SCG obtained the highest mean accuracy on Iris, equal to $0.988$.
+SGD obtained the highest mean accuracy on Breast Cancer, equal to $0.975$.
+The three means on Breast Cancer lay inside one standard deviation of each other.
+Glass remained difficult for every trainer.
+Mean test accuracy was $0.617$ for SGD, $0.619$ for SCG, and $0.615$ for LeapFrog.
+The standard deviations were $0.071$, $0.072$, and $0.083$.
+Macro-averaged $F_{1}$ on Glass separated the trainers more clearly than accuracy.
+The macro-averaged $F_{1}$ was $0.499$ for SCG, $0.484$ for SGD, and $0.435$ for LeapFrog.
+The small hidden layer, the six-class imbalance, and the 33-sample test set explained the high variance on Glass.
+
+
+\subsection{Function-approximation test performance}
+\label{sec:res-reg}
+Figure~\ref{fig:final-reg} and Table~\ref{tab:reg} report mean test MSE over 30 runs.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/final_regression.pdf}
+\caption{Mean test mean squared error on the function-approximation problems.}
+\label{fig:final-reg}
+\end{figure}
+
+\begin{table}[H]
+\caption{Mean test mean squared error $\pm$ standard deviation over 30 runs.}
+\label{tab:reg}
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Problem & SGD & SCG & LeapFrog \\
+\midrule
+sinc & $0.022\pm 0.045$ & $0.001\pm 0.004$ & $0.005\pm 0.008$ \\
+sincos & $0.021\pm 0.007$ & $0.005\pm 0.006$ & $0.014\pm 0.008$ \\
+Friedman \#1 & $0.044\pm 0.045$ & $0.014\pm 0.052$ & $0.062\pm 0.099$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+SCG obtained the lowest mean test MSE on sinc at $0.0012$, on sincos at $0.0051$, and on Friedman \#1 at $0.0141$.
+LeapFrog was second on sinc and sincos.
+SGD had a large standard deviation on sinc of $0.045$ relative to SCG at $0.004$.
+The gap is consistent with residual sensitivity of SGD to random initialisation.
+LeapFrog was the weakest of the three methods on Friedman \#1, with mean MSE $0.062$ and standard deviation $0.099$.
+Mean coefficients of determination on sinc were $0.998$ for SCG, $0.993$ for LeapFrog, and $0.966$ for SGD.
+Irrelevant inputs and additive noise produced a less smooth error surface.
+The kinetic-energy heuristic of LeapFrog was less reliable on the Friedman \#1 error surface than the scaled curvature of SCG.
+
+\subsection{Statistical comparison}
+\label{sec:res-stat}
+Table~\ref{tab:stats} records the omnibus test and the Holm-corrected pairwise decisions.
+
+\begin{table}[H]
+\caption{Omnibus tests on the 30 primary test scores.}
+\label{tab:stats}
+\begin{center}
+\begin{tabular}{llcc}
+\toprule
+Problem & Test & $p$ & Decision at $0.05$ \\
+\midrule
+Iris & Kruskal--Wallis & $3.5\times 10^{-5}$ & reject \\
+Breast Cancer & Kruskal--Wallis & $0.073$ & do not reject \\
+Glass & analysis of variance & $0.98$ & do not reject \\
+sinc & Kruskal--Wallis & $1.5\times 10^{-6}$ & reject \\
+sincos & Kruskal--Wallis & $4.5\times 10^{-11}$ & reject \\
+Friedman \#1 & Kruskal--Wallis & $2.5\times 10^{-10}$ & reject \\
+All six means & Friedman & $0.042$ & reject \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+Shapiro--Wilk tests rejected normality on five of the six problems.
+Kruskal--Wallis tests were therefore used on those problems.
+Glass was consistent with normality.
+A one-way analysis of variance was therefore used on Glass.
+
+The Kruskal--Wallis test rejected equality of the three trainers on Iris, with $p=3.5\times 10^{-5}$.
+The same test rejected equality on sinc, with $p=1.5\times 10^{-6}$.
+The same test rejected equality on sincos, with $p=4.5\times 10^{-11}$.
+The same test rejected equality on Friedman \#1, with $p=2.5\times 10^{-10}$.
+Holm-corrected Mann--Whitney tests found SCG better than SGD and better than LeapFrog on Iris, sinc, sincos, and Friedman \#1.
+SGD was better than LeapFrog on sinc, sincos, and Friedman \#1.
+Breast Cancer did not reject equality, with a Kruskal--Wallis $p$-value of $0.073$.
+Glass did not reject equality, with an analysis-of-variance $p$-value of $0.98$.
+
+A Friedman test on the six mean primary scores rejected equality of ranks, with $p=0.042$.
+The average ranks were $1.17$ for SCG, $2.33$ for SGD, and $2.50$ for LeapFrog, with rank one denoting the best mean.
+
+The ranking was therefore not uniform across problem types.
+On smooth, low-dimensional function approximation, SCG was the strongest of the three methods.
+On linearly well-separated medical data with 30 features, mini-batch SGD matched SCG.
+On a small imbalanced multi-class problem with a parsimonious hidden layer, no trainer dominated.
+
+\subsection{Discussion}
+Three observations follow from the tables.
+First, the claim of M{\o}ller that SCG has no critical user parameters is supported by the validation grid~\cite{moller1993}.
+Neighbouring $(\sigma,\lambda_{1})$ pairs produced similar validation errors.
+Second, SGD remained competitive when $\eta$ and $\beta$ were tuned per problem.
+SGD used far more gradient evaluations than SCG and LeapFrog on every problem.
+Each mini-batch step is one evaluation.
+Early stopping is checked only once per epoch.
+Third, LeapFrog LFOP1(b) was an effective neural-network trainer on the easy and medium problems.
+Engelbrecht discussed LeapFrog for neural-network training~\cite{engelbrecht2007}.
+LeapFrog was more sensitive to $\delta_{\max}$ than SCG was to $\sigma$.
+LeapFrog was the least stable of the three methods on Friedman \#1.
+
+A limitation of the study was the use of a single hidden layer and of small data sets.
+A second limitation was the architecture search with SCG only.
+A hidden-unit count that is optimal for SCG need not be optimal for SGD or LeapFrog.
+The protocol matched the stated requirement of one hidden-layer size per problem, not per algorithm.
+SCG was the most reliable of the three trainers across the six problems.
+SGD matched SCG on Breast Cancer after a per-problem grid search.
+LeapFrog was competitive on classification and on the two smoother regression problems.
+LeapFrog was the weakest method on Friedman \#1.
+Glass defeated all three trainers to a similar degree.
+
+
+\section{Conclusions}
+\label{sec:conclusions}
+Stochastic gradient descent (SGD), scaled conjugate gradient (SCG), and the LeapFrog algorithm LFOP1(b) were compared as trainers of a one-hidden-layer feedforward neural network.
+Six problems of increasing complexity were used.
+Hidden-unit counts and control parameters were selected by validation error.
+A total of 30 independent runs supplied the test scores.
+
+SCG obtained the lowest mean test error on Iris, sinc, sincos, and Friedman \#1.
+SGD obtained the lowest mean test accuracy on Breast Cancer.
+All three means on Breast Cancer were close.
+The three trainers were indistinguishable on Glass Identification at the reported precision.
+The study therefore supported SCG as the default trainer of the three methods.
+A tuned SGD remained adequate on well-separated classification data.
+LeapFrog required a careful cap on the step length.
+
+The comparison was restricted to one hidden layer, to six small problems, and to a single architecture per problem.
+The listed restrictions bounded the claim to the protocol that was run.
+
+\bibliographystyle{IEEEtranS}
+\bibliography{references}
+
+\appendix
+\section{Acronyms}
+\begin{description}
+\item[LFOP] leap-frog optimiser
+\item[MSE] mean squared error
+\item[SCG] scaled conjugate gradient
+\item[SGD] stochastic gradient descent
+\item[UCI] University of California, Irvine
+\end{description}
+
+\section{Symbols}
+\begin{description}
+\item[$\mathbf{a}$] LeapFrog acceleration, $\mathbf{a}=-\nabla E(\mathbf{w})$
+\item[$\alpha_{k}$] SCG step length
+\item[$\mathbf{b}$] bias vector
+\item[$\beta$] SGD momentum coefficient
+\item[$B$] mini-batch
+\item[$\delta_{k}$] SCG scaled curvature
+\item[$\delta_{\max}$] LeapFrog maximum step length
+\item[$\Delta_{k}$] SCG comparison parameter
+\item[$\Delta t$] LeapFrog time step
+\item[$E$] training error
+\item[$\varepsilon$] logarithm offset in the cross-entropy
+\item[$\mathbf{h}$] hidden activation
+\item[$\eta$] SGD learning rate
+\item[$\lambda$] SCG scale parameter
+\item[$\bar{\lambda}$] SCG scale from the previous iteration
+\item[$m$] number of consecutive obtuse LeapFrog angles before $\Delta t$ is halved
+\item[$\mu_{k}$] SCG inner product $\mathbf{p}_{k}^{\top}\mathbf{r}_{k}$
+\item[$n$] number of training samples
+\item[$n_{h}$] number of hidden units
+\item[$n_{i}$] number of inputs
+\item[$n_{o}$] number of outputs
+\item[$N$] number of packed weights
+\item[$\mathbf{p}$] SCG search direction
+\item[$\mathbf{q}_{k}$] SCG Hessian-vector product
+\item[$\mathbf{r}$] steepest-descent vector, $\mathbf{r}=-\nabla E(\mathbf{w})$
+\item[$s$] mini-batch size
+\item[$\sigma$] SCG finite-difference interval
+\item[$\mathbf{u}$] SGD momentum buffer
+\item[$\mathbf{v}$] LeapFrog particle velocity
+\item[$\mathbf{w}$] packed weight vector
+\item[$\mathbf{W}$] weight matrix
+\item[$\mathbf{z}$] layer pre-activation
+\end{description}
+
+\end{document}
